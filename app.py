@@ -7,6 +7,15 @@ import math
 from events.input import Buttons, BUTTON_TYPES
 
 
+# Display
+display_x = 240
+display_y = 240
+display_height_inches = 1.28
+ppi = display_x / display_height_inches
+
+# Font size
+one_pt = ppi / 72
+
 class EyApp(app.App):
 
     def __init__(self):
@@ -20,6 +29,7 @@ class EyApp(app.App):
         self.greet0 = 0
         self.greet1 = 0
         self.greet2 = 0
+        self.level_font_size = 6 * one_pt
 
     def update(self, delta):
         self.elapsed = self.elapsed + (delta / (12 - self.chaos))
@@ -87,7 +97,8 @@ class EyApp(app.App):
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Orate?")
         if self.greet2 == 3:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Yareet?")
-        ctx.rgb(1,1,1).move_to(-10, 100).text(str(self.chaos))
+        ctx.font_size = self.level_font_size
+        ctx.rgb(1,1,1).move_to(-2, 100).text(str(self.chaos))
         ctx.restore()
 
 __app_export__ = EyApp
