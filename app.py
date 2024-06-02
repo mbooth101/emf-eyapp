@@ -27,7 +27,7 @@ class EyApp(app.App):
         delay = (12 - self.chaos) * 250
         if self.accum > delay:
             self.accum = self.accum - delay
-            self.greet0 = random.randrange(6)
+            self.greet0 = random.randrange(7)
             self.greet1 = random.randrange(3)
             self.greet2 = random.randrange(3)
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
@@ -61,6 +61,8 @@ class EyApp(app.App):
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Alreet")
         if self.greet0 == 5:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Moornin")
+        if self.greet0 == 6:
+            ctx.rgb(0.5,1,0).move_to(offset, offsety).text("G'day")
 
         x_factor = math.cos(math.radians((self.elapsed % 360) + 120)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 120)) * ratio
