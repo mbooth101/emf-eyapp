@@ -3,9 +3,12 @@ import app
 import random
 import settings
 import math
+import time
 
 from events.input import Buttons, BUTTON_TYPES
-
+from tildagonos import tildagonos
+from system.eventbus import eventbus
+from system.patterndisplay.events import *
 
 # Display
 display_x = 240
@@ -29,7 +32,9 @@ class EyApp(app.App):
         self.greet0 = 0
         self.greet1 = 0
         self.greet2 = 0
-        self.level_font_size = 6 * one_pt
+        self.main_font_size = 14
+        self.level_font_size = 6
+        eventbus.emit(PatternDisable())
 
     def update(self, delta):
         self.elapsed = self.elapsed + (delta / (12 - self.chaos))
@@ -41,6 +46,10 @@ class EyApp(app.App):
             self.greet1 = random.randrange(3)
             self.greet2 = random.randrange(3)
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
+            # The button_states do not update while you are in the background.
+            # Calling clear() ensures the next time you open the app, it stays open.
+            # Without it the app would close again immediately.
+            self.button_states.clear()
             self.minimise()
         if self.button_states.get(BUTTON_TYPES["UP"]):
             if self.chaos < 11:
@@ -48,16 +57,22 @@ class EyApp(app.App):
         if self.button_states.get(BUTTON_TYPES["DOWN"]):
             if self.chaos > 0:
                 self.chaos = self.chaos - 1
+        self.main_font_size = 14 + (random.randrange(self.chaos + 1) / 2)
+        for i in range(12):
+            tildagonos.leds[i+1] = (0, 0, 1)
 
     def draw(self, ctx):
         ctx.save()
+        ctx.text_align = ctx.CENTER
         ctx.rgb(0,0,0).rectangle(-120,-120,240,240).fill()
         random.seed()
         ratio = self.chaos / 12
 
+        ctx.font_size = self.main_font_size * one_pt
+
         x_factor = math.cos(math.radians(self.elapsed % 360)) * ratio
         y_factor = math.sin(math.radians(self.elapsed % 360)) * ratio
-        offset = -80 + (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
+        offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
         offsety = -10 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet0 == 0:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Ey Up")
@@ -70,13 +85,19 @@ class EyApp(app.App):
         if self.greet0 == 4:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Alreet")
         if self.greet0 == 5:
-            ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Moornin")
+            t = time.localtime()[3];
+            if t >= 0 and t < 12:
+                ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Mooornin")
+            if t >= 12 and t < 17:
+                ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Aaafternoon")
+            if t >= 17:
+                ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Eeevenin")
         if self.greet0 == 6:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("G'day")
 
         x_factor = math.cos(math.radians((self.elapsed % 360) + 120)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 120)) * ratio
-        offset = -80 + (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
+        offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
         offsety = 20 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet1 == 0:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Ahm " + self.name)
@@ -87,7 +108,7 @@ class EyApp(app.App):
 
         x_factor = math.cos(math.radians((self.elapsed % 360) + 240)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 240)) * ratio
-        offset = -80 + (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
+        offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
         offsety = 50 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet2 == 0:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Ow a tha?")
@@ -97,8 +118,10 @@ class EyApp(app.App):
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Orate?")
         if self.greet2 == 3:
             ctx.rgb(0.5,1,0).move_to(offset, offsety).text("Yareet?")
-        ctx.font_size = self.level_font_size
-        ctx.rgb(1,1,1).move_to(-2, 100).text(str(self.chaos))
+
+        ctx.font_size = self.level_font_size * one_pt
+
+        ctx.rgb(1,1,1).move_to(0, 100).text(str(self.chaos))
         ctx.restore()
 
 __app_export__ = EyApp
