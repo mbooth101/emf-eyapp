@@ -41,6 +41,14 @@ class EyApp(app.App):
         self.greet2 = 0
         self.main_font_size = 14
         self.level_font_size = 6
+
+        # Attempt to set RTC to correct time
+        try:
+            import ntptime
+            ntptime.settime()
+        except Exception as e:
+            pass
+
         eventbus.on_async(RequestForegroundPushEvent, self._resume, self)
         eventbus.on_async(RequestForegroundPopEvent, self._pause, self)
         eventbus.emit(PatternDisable())
@@ -91,7 +99,7 @@ class EyApp(app.App):
             if self.chaos > 0:
                 self.greet0 = random.randrange(7)
                 self.greet1 = random.randrange(4)
-                self.greet2 = random.randrange(3)
+                self.greet2 = random.randrange(4)
 
         # Choose new text colour
         if self.chaos > 0:
