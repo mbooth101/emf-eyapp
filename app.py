@@ -30,12 +30,8 @@ class EyApp(app.App):
             self.name = "<yobbo>"
         self.elapsed = 0
         self.text_accum = 0
-        self.col_accum = 0
-        self.led_accum = 0
         self.chaos = 5
-        self.text_delay = (12 - self.chaos) * 350
-        self.col_delay = (12 - self.chaos) * 500
-        self.led_delay = (12 - self.chaos) * 285
+        self._update_chaos(0)
         self.col_hue = 0
         self.led_hue = 127
         self.col = EyApp.hsl_to_rgb(self.col_hue, 255, 255)
@@ -98,20 +94,18 @@ class EyApp(app.App):
                 self.greet2 = random.randrange(3)
 
         # Choose new text colour
-        self.col_accum = self.col_accum + delta
-        if self.col_accum > self.col_delay:
-            self.col_accum = self.col_accum - self.col_delay
-            if self.chaos > 0:
-                self.col_hue = (self.col_hue + 158) % 255
-                self.col = EyApp.hsl_to_rgb(self.col_hue, 255, 255)
+        if self.chaos > 0:
+            col_inc = (delta / 1000) * self.col_speed
+            self.col_hue = (self.col_hue + col_inc) % 255
+            self.col = EyApp.hsl_to_rgb(math.floor(self.col_hue), 255, 255)
 
         # Choose new led colour
-        self.led_accum = self.led_accum + delta
-        if self.led_accum > self.led_delay:
-            self.led_accum = self.led_accum - self.led_delay
-            if self.chaos > 0:
-                self.led_hue = (self.led_hue + 158) % 255
-                self.led = EyApp.hsl_to_rgb(self.led_hue, 191, 3, False)
+        if self.chaos > 0:
+            led_inc = (delta / 1000) * self.led_speed
+            self.led_hue = (self.led_hue - led_inc)
+            if (self.led_hue < 0):
+                self.led_hue = self.led_hue + 255
+            self.led = EyApp.hsl_to_rgb(math.floor(self.led_hue), 191, 3, False)
 
         # Exit the app
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
@@ -123,22 +117,23 @@ class EyApp(app.App):
 
         # Increase chaos
         if self.button_states.get(BUTTON_TYPES["UP"]):
-            if self.chaos < 11:
-                self.chaos = self.chaos + 1
-            self.text_delay = (12 - self.chaos) * 350
-            self.col_delay = (12 - self.chaos) * 500
-            self.led_delay = (12 - self.chaos) * 285
+            self._update_chaos(1)
 
         # Decrease chaos
         if self.button_states.get(BUTTON_TYPES["DOWN"]):
-            if self.chaos > 0:
-                self.chaos = self.chaos - 1
-            self.text_delay = (12 - self.chaos) * 350
-            self.col_delay = (12 - self.chaos) * 500
-            self.led_delay = (12 - self.chaos) * 285
+            self._update_chaos(-1)
 
         # Choose new greeting text size
         self.main_font_size = 14 + (random.randrange(self.chaos + 1) / 2)
+
+    def _update_chaos(self, direction):
+        if direction > 0 and self.chaos < 11:
+            self.chaos = self.chaos + 1
+        if direction < 0 and self.chaos > 0:
+            self.chaos = self.chaos - 1
+        self.text_delay = (12 - self.chaos) * 350
+        self.col_speed = self.chaos ** 2
+        self.led_speed = self.chaos ** 3
 
     def draw(self, ctx):
         ctx.save()
