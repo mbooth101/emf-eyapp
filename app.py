@@ -146,7 +146,7 @@ class EyApp(app.App):
         x_factor = math.cos(math.radians(self.elapsed % 360)) * ratio
         y_factor = math.sin(math.radians(self.elapsed % 360)) * ratio
         offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
-        offsety = -10 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
+        offsety = -20 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet0 == 0:
             ctx.rgb(*self.col).move_to(offset, offsety).text("Ey Up")
         if self.greet0 == 1:
@@ -171,7 +171,7 @@ class EyApp(app.App):
         x_factor = math.cos(math.radians((self.elapsed % 360) + 120)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 120)) * ratio
         offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
-        offsety = 20 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
+        offsety = 10 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet1 == 0:
             ctx.rgb(*self.col).move_to(offset, offsety).text("Ahm " + self.name)
         if self.greet1 == 1:
@@ -184,7 +184,7 @@ class EyApp(app.App):
         x_factor = math.cos(math.radians((self.elapsed % 360) + 240)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 240)) * ratio
         offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
-        offsety = 50 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
+        offsety = 40 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
         if self.greet2 == 0:
             ctx.rgb(*self.col).move_to(offset, offsety).text("Ow a tha?")
         if self.greet2 == 1:
@@ -196,6 +196,10 @@ class EyApp(app.App):
 
         ctx.font_size = self.level_font_size * one_pt
         ctx.rgb(1, 1, 1).move_to(0, 100).text(str(self.chaos))
+        if self.chaos > 0:
+            ctx.move_to(-5, 105).line_to(0, 110).line_to(5, 105).line_to(-5, 105).fill()
+        if self.chaos < 11:
+            ctx.move_to(-5, 85).line_to(0, 80).line_to(5, 85).line_to(-5, 85).fill()
         ctx.restore()
 
         for i in range(12):
