@@ -30,7 +30,7 @@ class EyApp(app.App):
             self.name = "<yobbo>"
         self.elapsed = 0
         self.text_accum = 0
-        self.chaos = 5
+        self.chaos = self._load()
         self._update_chaos(0)
         self.col_hue = 0
         self.led_hue = 127
@@ -52,6 +52,23 @@ class EyApp(app.App):
         eventbus.on_async(RequestForegroundPushEvent, self._resume, self)
         eventbus.on_async(RequestForegroundPopEvent, self._pause, self)
         eventbus.emit(PatternDisable())
+
+    def _load(self):
+        try:
+            with open('/eyapp.data', 'r') as f:
+                chaos = int(next(f))
+        except:
+            chaos = 5
+        if chaos is None:
+            chaos = 5
+        return chaos
+
+    def _save(self):
+        try:
+            with open('/eyapp.data', 'w') as f:
+                f.write('{}'.format(str(self.chaos)))
+        except:
+            pass
 
     async def _resume(self, event: RequestForegroundPushEvent):
         # Disable firmware led pattern
@@ -142,6 +159,7 @@ class EyApp(app.App):
         self.text_delay = (12 - self.chaos) * 350
         self.col_speed = self.chaos ** 2
         self.led_speed = self.chaos ** 3
+        self._save()
 
     def draw(self, ctx):
         ctx.save()
