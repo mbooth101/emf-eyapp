@@ -31,11 +31,15 @@ class EyApp(app.App):
         self.elapsed = 0
         self.text_accum = 0
         self.col_accum = 0
+        self.led_accum = 0
         self.chaos = 5
         self.text_delay = (12 - self.chaos) * 350
         self.col_delay = (12 - self.chaos) * 500
+        self.led_delay = (12 - self.chaos) * 285
         self.col_hue = 0
+        self.led_hue = 127
         self.col = EyApp.hsl_to_rgb(self.col_hue, 255, 255)
+        self.led = EyApp.hsl_to_rgb(self.led_hue, 191, 3, False)
         self.greet0 = 0
         self.greet1 = 0
         self.greet2 = 0
@@ -54,28 +58,32 @@ class EyApp(app.App):
         eventbus.emit(PatternEnable())
 
     @staticmethod
-    def hsl_to_rgb(h, s, v):
-        # Returns rgb normalised to between 0 and 1
+    def hsl_to_rgb(h, s, v, norm=True):
+        rgb = (0, 0, 0)
         if s == 0:
-            return (v / 255, v / 255, v / 255)
+            rgb = (v, v, v)
         region = h // 43
         remainder = (h - (region * 43)) * 6
         a = (v * (255 - s)) >> 8
         b = (v * (255 - ((s * remainder) >> 8))) >> 8
         c = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8
         if region == 0:
-            return (v / 255, c / 255, a / 255)
+            rgb = (v, c, a)
         if region == 1:
-            return (b / 255, v / 255, a / 255)
+            rgb = (b, v, a)
         if region == 2:
-            return (a / 255, v / 255, c / 255)
+            rgb = (a, v, c)
         if region == 3:
-            return (a / 255, b / 255, v / 255)
+            rgb = (a, b, v)
         if region == 4:
-            return (c / 255, a / 255, v / 255)
+            rgb = (c, a, v)
         if region == 5:
-            return (v / 255, a / 255, b / 255)
-        return None
+            rgb = (v, a, b)
+        # Optionally returns rgb normalised to between 0 and 1
+        if norm:
+            r, g, b = map(lambda x: x / 255, rgb)
+            return (r, g, b)
+        return rgb
 
     def update(self, delta):
         self.elapsed = self.elapsed + (delta / (12 - self.chaos))
@@ -84,16 +92,26 @@ class EyApp(app.App):
         self.text_accum = self.text_accum + delta
         if self.text_accum > self.text_delay:
             self.text_accum = self.text_accum - self.text_delay
-            self.greet0 = random.randrange(7)
-            self.greet1 = random.randrange(4)
-            self.greet2 = random.randrange(3)
+            if self.chaos > 0:
+                self.greet0 = random.randrange(7)
+                self.greet1 = random.randrange(4)
+                self.greet2 = random.randrange(3)
 
         # Choose new text colour
         self.col_accum = self.col_accum + delta
         if self.col_accum > self.col_delay:
             self.col_accum = self.col_accum - self.col_delay
-            self.col_hue = (self.col_hue + 158) % 255
-            self.col = EyApp.hsl_to_rgb(self.col_hue, 255, 255)
+            if self.chaos > 0:
+                self.col_hue = (self.col_hue + 158) % 255
+                self.col = EyApp.hsl_to_rgb(self.col_hue, 255, 255)
+
+        # Choose new led colour
+        self.led_accum = self.led_accum + delta
+        if self.led_accum > self.led_delay:
+            self.led_accum = self.led_accum - self.led_delay
+            if self.chaos > 0:
+                self.led_hue = (self.led_hue + 158) % 255
+                self.led = EyApp.hsl_to_rgb(self.led_hue, 191, 3, False)
 
         # Exit the app
         if self.button_states.get(BUTTON_TYPES["CANCEL"]):
@@ -109,6 +127,7 @@ class EyApp(app.App):
                 self.chaos = self.chaos + 1
             self.text_delay = (12 - self.chaos) * 350
             self.col_delay = (12 - self.chaos) * 500
+            self.led_delay = (12 - self.chaos) * 285
 
         # Decrease chaos
         if self.button_states.get(BUTTON_TYPES["DOWN"]):
@@ -116,6 +135,7 @@ class EyApp(app.App):
                 self.chaos = self.chaos - 1
             self.text_delay = (12 - self.chaos) * 350
             self.col_delay = (12 - self.chaos) * 500
+            self.led_delay = (12 - self.chaos) * 285
 
         # Choose new greeting text size
         self.main_font_size = 14 + (random.randrange(self.chaos + 1) / 2)
@@ -182,5 +202,9 @@ class EyApp(app.App):
         ctx.font_size = self.level_font_size * one_pt
         ctx.rgb(1, 1, 1).move_to(0, 100).text(str(self.chaos))
         ctx.restore()
+
+        for i in range(12):
+            tildagonos.leds[i+1] = self.led
+
 
 __app_export__ = EyApp
