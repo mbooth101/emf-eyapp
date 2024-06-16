@@ -37,4 +37,4 @@ description = "A northerner simulator."
 # increased, we interpret this as a new version being released.
 #
 # Version number must be an integer!
-version = "7"
+version = "8"
