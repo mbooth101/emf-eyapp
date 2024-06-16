@@ -12,9 +12,9 @@ from system.patterndisplay.events import *
 from system.scheduler.events import *
 
 # Display
-display_x = 240
-display_y = 240
-display_height_inches = 1.28
+display_x = const(240)
+display_y = const(240)
+display_height_inches = const(1.28)
 ppi = display_x / display_height_inches
 
 # Font size
@@ -41,6 +41,15 @@ class EyApp(app.App):
         self.greet2 = 0
         self.main_font_size = 14
         self.level_font_size = 6
+
+        self.show_perf = False
+        self.current_time = 0
+        self.last_time = 0
+        self.perf_idx = 0
+        self.fps_samples = [0,0,0,0,0]
+        self.frame_time_samples = [0,0,0,0,0]
+        self.fps_avg = 0
+        self.frame_time_avg = 0
 
         # Attempt to set RTC to correct time
         try:
@@ -148,6 +157,12 @@ class EyApp(app.App):
         if self.button_states.get(BUTTON_TYPES["DOWN"]):
             self._update_chaos(-1)
 
+        # Show framerate
+        if self.button_states.get(BUTTON_TYPES["RIGHT"]):
+            self.show_perf = True
+        else:
+            self.show_perf = False
+
         # Choose new greeting text size
         self.main_font_size = 14 + (random.randrange(self.chaos + 1) / 2)
 
@@ -162,7 +177,20 @@ class EyApp(app.App):
         self._save()
 
     def draw(self, ctx):
-        ctx.save()
+        # Calculate time since last frame
+        self.current_time = time.ticks_us()
+        frame_time = time.ticks_diff(self.current_time, self.last_time)
+        self.last_time = self.current_time
+
+        # Calculate perf metrics
+        self.frame_time_samples[self.perf_idx] = frame_time
+        self.fps_samples[self.perf_idx] = 1_000_000 / frame_time
+        self.perf_idx = self.perf_idx + 1
+        if self.perf_idx > 4:
+            self.perf_idx = 0
+            self.frame_time_avg = int(sum(self.frame_time_samples) / 5)
+            self.fps_avg = sum(self.fps_samples) / 5
+
         ctx.text_align = ctx.CENTER
         ctx.rgb(0,0,0).rectangle(-120,-120,240,240).fill()
         ratio = self.chaos / 12
@@ -226,8 +254,10 @@ class EyApp(app.App):
             ctx.move_to(-5, 105).line_to(0, 110).line_to(5, 105).line_to(-5, 105).fill()
         if self.chaos < 11:
             ctx.move_to(-5, 85).line_to(0, 80).line_to(5, 85).line_to(-5, 85).fill()
-        ctx.restore()
 
+        if self.show_perf:
+            ctx.rgb(1, 1, 1).move_to(0, -80).text(f"{self.fps_avg:.2f} fps")
+            ctx.rgb(1, 1, 1).move_to(0, -60).text(f"{self.frame_time_avg} us")
         for i in range(12):
             tildagonos.leds[i+1] = self.led
 
