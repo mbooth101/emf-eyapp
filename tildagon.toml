@@ -32,4 +32,4 @@ description = "A Name Badge for Northerners"
 # increased, we interpret this as a new version being released.
 #
 # Version number must be an integer!
-version = "9"
+version = "10"
