@@ -82,6 +82,9 @@ class EyApp(app.App):
         self.main_font_size = 14
         self.level_font_size = 5
 
+        self.highlight_active = False
+        self.highlight_counter = 3 * max(1, 12 - self.chaos)
+
         self.show_perf = False
         self.current_time = 0
         self.last_time = 0
@@ -172,16 +175,29 @@ class EyApp(app.App):
         for idx in range(len(self.text_accum)):
             accum = self.text_accum[idx]
             delay = self.text_delay + 25 * idx
-            if accum > delay:
-                self.text_accum[idx] = accum - delay
-                if self.chaos > 0:
-                    self.greets[idx] = random.randrange(len(greetings[idx]))
+            if accum <= delay:
+                continue
+
+            self.text_accum[idx] = accum - delay
+            if self.chaos <= 0:
+                continue
+
+            self.greets[idx] = random.randrange(len(greetings[idx]))
+            if idx != 1:
+                continue
+
+            self.highlight_counter -= 1
+            if self.highlight_counter <= 0:
+                x_val = max(1, 12 - self.chaos)
+                self.highlight_active = not self.highlight_active
+                self.highlight_counter = x_val if self.highlight_active else 3 * x_val
 
         # Choose new text colour
         if self.chaos > 0:
             col_inc = (delta / 1000) * self.col_speed
             self.col_hue = (self.col_hue + col_inc) % 255
-            self.col = EyApp.hsl_to_rgb(math.floor(self.col_hue), 255, 255)
+        else:
+            self.highlight_active = False
 
         # Choose new led colour
         if self.chaos > 0:
@@ -265,8 +281,28 @@ class EyApp(app.App):
         y_factor = math.sin(math.radians((self.elapsed % 360) + 120)) * ratio
         offset = (20 * x_factor) + random.randrange(1 + 2 * self.chaos)
         offsety = 10 + (5 * y_factor) + random.randrange(1 + 1 * self.chaos)
-        intro_greet = greetings[1][self.greets[1]].replace("<N>", self.name)
-        ctx.rgb(*self.col).move_to(offset, offsety).text(intro_greet)
+        greeting_tmpl = greetings[1][self.greets[1]]
+        opposite_hue = (self.col_hue + 128) % 255
+        opposite_col = EyApp.hsl_to_rgb(math.floor(opposite_hue), 255, 255)
+
+        if "<N>" in greeting_tmpl:
+            part_before, part_after = greeting_tmpl.split("<N>", 1)
+            w_before = ctx.text_width(part_before)
+            w_name = ctx.text_width(self.name)
+            w_after = ctx.text_width(part_after)
+            total_width = w_before + w_name + w_after
+
+            start_x = offset - total_width / 2
+
+            name_col = opposite_col if self.highlight_active else self.col
+            ctx.text_align = ctx.LEFT
+            ctx.rgb(*self.col).move_to(start_x, offsety).text(part_before)
+            ctx.rgb(*name_col).move_to(start_x + w_before, offsety).text(self.name)
+            ctx.rgb(*self.col).move_to(start_x + w_before + w_name, offsety).text(part_after)
+            ctx.text_align = ctx.CENTER
+        else:
+            intro_greet = greeting_tmpl.replace("<N>", self.name)
+            ctx.rgb(*self.col).move_to(offset, offsety).text(intro_greet)
 
         x_factor = math.cos(math.radians((self.elapsed % 360) + 240)) * ratio
         y_factor = math.sin(math.radians((self.elapsed % 360) + 240)) * ratio
